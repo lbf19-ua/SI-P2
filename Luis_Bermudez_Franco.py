@@ -42,27 +42,46 @@ def cargar_y_preprocesar_cifar10():
 
 
 def plot_evolucion_entrenamiento(history, titulo="Evolución del entrenamiento"):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    # Crear figura con un solo subplot y dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 6))
     
-    # Gráfica de pérdida
-    ax1.plot(history.history['loss'], label='Train Loss', marker='o')
-    ax1.plot(history.history['val_loss'], label='Validation Loss', marker='s')
-    ax1.set_xlabel('Época')
-    ax1.set_ylabel('Pérdida')
-    ax1.set_title('Evolución de la Pérdida')
-    ax1.legend()
+    # Eje Y izquierdo para Loss
+    color_loss = 'tab:red'
+    ax1.set_xlabel('Época', fontsize=12)
+    ax1.set_ylabel('Pérdida', color=color_loss, fontsize=12)
+    ax1.plot(history.history['loss'], label='Train Loss', 
+             color=color_loss, marker='o', linestyle='-', linewidth=2)
+    ax1.plot(history.history['val_loss'], label='Validation Loss', 
+             color='tab:orange', marker='s', linestyle='--', linewidth=2)
+    ax1.tick_params(axis='y', labelcolor=color_loss)
     ax1.grid(True, alpha=0.3)
+    ax1.legend(loc='upper left')
     
-    # Gráfica de accuracy
-    ax2.plot(history.history['accuracy'], label='Train Accuracy', marker='o')
-    ax2.plot(history.history['val_accuracy'], label='Validation Accuracy', marker='s')
-    ax2.set_xlabel('Época')
-    ax2.set_ylabel('Tasa de Acierto')
-    ax2.set_title('Evolución de la Tasa de Acierto')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # Eje Y derecho para Accuracy
+    ax2 = ax1.twinx()
+    color_acc = 'tab:blue'
+    ax2.set_ylabel('Tasa de Acierto', color=color_acc, fontsize=12)
+    ax2.plot(history.history['accuracy'], label='Train Accuracy', 
+             color=color_acc, marker='o', linestyle='-', linewidth=2)
+    ax2.plot(history.history['val_accuracy'], label='Validation Accuracy', 
+             color='tab:cyan', marker='s', linestyle='--', linewidth=2)
+    ax2.tick_params(axis='y', labelcolor=color_acc)
+    ax2.legend(loc='upper right')
     
-    plt.suptitle(titulo)
+    # Ajustar escalas de los ejes Y para aprovechar mejor la superficie
+    # Ajustar escala de loss
+    loss_min = min(min(history.history['loss']), min(history.history['val_loss']))
+    loss_max = max(max(history.history['loss']), max(history.history['val_loss']))
+    loss_range = loss_max - loss_min
+    ax1.set_ylim([max(0, loss_min - loss_range * 0.1), loss_max + loss_range * 0.1])
+    
+    # Ajustar escala de accuracy
+    acc_min = min(min(history.history['accuracy']), min(history.history['val_accuracy']))
+    acc_max = max(max(history.history['accuracy']), max(history.history['val_accuracy']))
+    acc_range = acc_max - acc_min
+    ax2.set_ylim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    
+    plt.title(titulo, fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
 
@@ -72,26 +91,52 @@ def plot_comparacion_modelos(resultados, titulo="Comparación de modelos"):
     tiempos = [r['tiempo'] for r in resultados]
     accuracies = [r['accuracy'] for r in resultados]
     
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    # Crear figura con un solo subplot y dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 6))
     
-    # Gráfica de tiempo
-    ax1.bar(nombres, tiempos, color='skyblue', edgecolor='navy', alpha=0.7)
-    ax1.set_xlabel('Modelo')
-    ax1.set_ylabel('Tiempo de Entrenamiento (segundos)')
-    ax1.set_title('Tiempo de Entrenamiento')
-    ax1.tick_params(axis='x', rotation=45)
+    # Eje Y izquierdo para Tiempo
+    color_tiempo = 'tab:blue'
+    x_pos = np.arange(len(nombres))
+    width = 0.35
+    
+    bars1 = ax1.bar(x_pos - width/2, tiempos, width, label='Tiempo de Entrenamiento', 
+                    color='skyblue', edgecolor='navy', alpha=0.7)
+    ax1.set_xlabel('Modelo', fontsize=12)
+    ax1.set_ylabel('Tiempo de Entrenamiento (segundos)', color=color_tiempo, fontsize=12)
+    ax1.tick_params(axis='y', labelcolor=color_tiempo)
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(nombres, rotation=45, ha='right')
     ax1.grid(True, alpha=0.3, axis='y')
     
-    # Gráfica de accuracy
-    ax2.bar(nombres, accuracies, color='lightgreen', edgecolor='darkgreen', alpha=0.7)
-    ax2.set_xlabel('Modelo')
-    ax2.set_ylabel('Tasa de Acierto (Test)')
-    ax2.set_title('Tasa de Acierto Final')
-    ax2.tick_params(axis='x', rotation=45)
-    ax2.grid(True, alpha=0.3, axis='y')
-    ax2.set_ylim([0, 1])
+    # Ajustar escala de tiempo para aprovechar mejor la superficie
+    tiempo_min = min(tiempos)
+    tiempo_max = max(tiempos)
+    tiempo_range = tiempo_max - tiempo_min
+    ax1.set_ylim([max(0, tiempo_min - tiempo_range * 0.1), tiempo_max + tiempo_range * 0.1])
     
-    plt.suptitle(titulo)
+    # Eje Y derecho para Accuracy
+    ax2 = ax1.twinx()
+    color_acc = 'tab:green'
+    bars2 = ax2.bar(x_pos + width/2, accuracies, width, label='Test Accuracy', 
+                    color='lightgreen', edgecolor='darkgreen', alpha=0.7)
+    ax2.set_ylabel('Tasa de Acierto (Test)', color=color_acc, fontsize=12)
+    ax2.tick_params(axis='y', labelcolor=color_acc)
+    
+    # Ajustar escala de accuracy para aprovechar mejor la superficie
+    acc_min = min(accuracies)
+    acc_max = max(accuracies)
+    acc_range = acc_max - acc_min
+    if acc_range > 0:
+        ax2.set_ylim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    else:
+        ax2.set_ylim([max(0, acc_min - 0.05), min(1, acc_max + 0.05)])
+    
+    # Leyenda combinada
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    
+    plt.title(titulo, fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
 
@@ -513,31 +558,52 @@ def probar_MLP3(X_train, X_test, Y_train, Y_test, batch_sizes=None, epochs_max=5
     
     print("\n[MLP3] Generando gráficas comparativas...")
     
-    # MLP3: Gráfica comparativa de accuracy y tiempo
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    # MLP3: Gráfica comparativa de accuracy y tiempo en una sola gráfica con dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 6))
     
     batch_vals = [r['batch_size'] for r in resultados_batch_sizes]
     accuracies = [r['test_accuracy'] for r in resultados_batch_sizes]
     tiempos = [r['tiempo'] for r in resultados_batch_sizes]
     
-    # Gráfica de accuracy
-    ax1.plot(batch_vals, accuracies, marker='o', linestyle='-', linewidth=2, markersize=8)
+    # Eje Y izquierdo para Accuracy
+    color_acc = 'tab:blue'
     ax1.set_xlabel('Batch Size', fontsize=12)
-    ax1.set_ylabel('Test Accuracy', fontsize=12)
-    ax1.set_title('Test Accuracy vs Batch Size', fontsize=13, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
+    ax1.set_ylabel('Test Accuracy', color=color_acc, fontsize=12)
+    line1 = ax1.plot(batch_vals, accuracies, marker='o', linestyle='-', linewidth=2, 
+                     markersize=8, color=color_acc, label='Test Accuracy')
+    ax1.tick_params(axis='y', labelcolor=color_acc)
     ax1.set_xscale('log', base=2)  # Escala logarítmica para batch_size
+    ax1.grid(True, alpha=0.3)
     
-    # Gráfica de tiempo
-    ax2.plot(batch_vals, tiempos, marker='s', linestyle='--', linewidth=2, 
-             markersize=8, color='tab:red')
-    ax2.set_xlabel('Batch Size', fontsize=12)
-    ax2.set_ylabel('Tiempo de Entrenamiento (segundos)', fontsize=12)
-    ax2.set_title('Tiempo de Entrenamiento vs Batch Size', fontsize=13, fontweight='bold')
-    ax2.grid(True, alpha=0.3)
-    ax2.set_xscale('log', base=2)
+    # Ajustar escala de accuracy
+    acc_min = min(accuracies)
+    acc_max = max(accuracies)
+    acc_range = acc_max - acc_min
+    if acc_range > 0:
+        ax1.set_ylim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    else:
+        ax1.set_ylim([max(0, acc_min - 0.05), min(1, acc_max + 0.05)])
     
-    plt.suptitle('MLP3: Comparación de Batch Sizes', fontsize=14, fontweight='bold')
+    # Eje Y derecho para Tiempo
+    ax2 = ax1.twinx()
+    color_tiempo = 'tab:red'
+    ax2.set_ylabel('Tiempo de Entrenamiento (segundos)', color=color_tiempo, fontsize=12)
+    line2 = ax2.plot(batch_vals, tiempos, marker='s', linestyle='--', linewidth=2, 
+                     markersize=8, color=color_tiempo, label='Tiempo de Entrenamiento')
+    ax2.tick_params(axis='y', labelcolor=color_tiempo)
+    
+    # Ajustar escala de tiempo
+    tiempo_min = min(tiempos)
+    tiempo_max = max(tiempos)
+    tiempo_range = tiempo_max - tiempo_min
+    ax2.set_ylim([max(0, tiempo_min - tiempo_range * 0.1), tiempo_max + tiempo_range * 0.1])
+    
+    # Leyenda combinada
+    lines = line1 + line2
+    labels = [l.get_label() for l in lines]
+    ax1.legend(lines, labels, loc='best')
+    
+    plt.title('MLP3: Comparación de Batch Sizes', fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
     
@@ -678,30 +744,56 @@ def probar_MLP4(X_train, X_test, Y_train, Y_test, activaciones=None, epochs_max=
 
     print("\n[MLP4] Generando gráficas comparativas...")
     
-    # MLP4: Gráfica comparativa de accuracy y tiempo
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    # MLP4: Gráfica comparativa de accuracy y tiempo en una sola gráfica con dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 6))
     
     activaciones_nombres = [r['activacion'] for r in resultados_activaciones]
     accuracies = [r['test_accuracy'] for r in resultados_activaciones]
     tiempos = [r['tiempo'] for r in resultados_activaciones]
     
-    # Gráfica de accuracy
-    ax1.bar(activaciones_nombres, accuracies, color=['skyblue', 'lightgreen', 'lightcoral'], 
-            edgecolor='navy', alpha=0.7)
+    x_pos = np.arange(len(activaciones_nombres))
+    width = 0.35
+    
+    # Eje Y izquierdo para Accuracy
+    color_acc = 'tab:blue'
+    bars1 = ax1.bar(x_pos - width/2, accuracies, width, label='Test Accuracy',
+                    color='lightgreen', edgecolor='darkgreen', alpha=0.7)
     ax1.set_xlabel('Función de Activación', fontsize=12)
-    ax1.set_ylabel('Test Accuracy', fontsize=12)
-    ax1.set_title('Test Accuracy por Función de Activación', fontsize=13, fontweight='bold')
+    ax1.set_ylabel('Test Accuracy', color=color_acc, fontsize=12)
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(activaciones_nombres)
+    ax1.tick_params(axis='y', labelcolor=color_acc)
     ax1.grid(True, alpha=0.3, axis='y')
     
-    # Gráfica de tiempo
-    ax2.bar(activaciones_nombres, tiempos, color=['skyblue', 'lightgreen', 'lightcoral'],
-            edgecolor='navy', alpha=0.7)
-    ax2.set_xlabel('Función de Activación', fontsize=12)
-    ax2.set_ylabel('Tiempo de Entrenamiento (segundos)', fontsize=12)
-    ax2.set_title('Tiempo de Entrenamiento por Función de Activación', fontsize=13, fontweight='bold')
-    ax2.grid(True, alpha=0.3, axis='y')
+    # Ajustar escala de accuracy
+    acc_min = min(accuracies)
+    acc_max = max(accuracies)
+    acc_range = acc_max - acc_min
+    if acc_range > 0:
+        ax1.set_ylim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    else:
+        ax1.set_ylim([max(0, acc_min - 0.05), min(1, acc_max + 0.05)])
     
-    plt.suptitle('MLP4: Comparación de Funciones de Activación', fontsize=14, fontweight='bold')
+    # Eje Y derecho para Tiempo
+    ax2 = ax1.twinx()
+    color_tiempo = 'tab:red'
+    bars2 = ax2.bar(x_pos + width/2, tiempos, width, label='Tiempo de Entrenamiento',
+                    color='skyblue', edgecolor='navy', alpha=0.7)
+    ax2.set_ylabel('Tiempo de Entrenamiento (segundos)', color=color_tiempo, fontsize=12)
+    ax2.tick_params(axis='y', labelcolor=color_tiempo)
+    
+    # Ajustar escala de tiempo
+    tiempo_min = min(tiempos)
+    tiempo_max = max(tiempos)
+    tiempo_range = tiempo_max - tiempo_min
+    ax2.set_ylim([max(0, tiempo_min - tiempo_range * 0.1), tiempo_max + tiempo_range * 0.1])
+    
+    # Leyenda combinada
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='best')
+    
+    plt.title('MLP4: Comparación de Funciones de Activación', fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
     
@@ -847,13 +939,62 @@ def probar_MLP5(X_train, X_test, Y_train, Y_test, num_neuronas=None, epochs_max=
     
     print("\n[MLP5] Generando gráficas comparativas...")
     
-    # MLP5: Gráfica comparativa
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
-    
     neuronas_vals = [r['neuronas'] for r in resultados_neuronas]
     accuracies = [r['test_accuracy'] for r in resultados_neuronas]
     tiempos = [r['tiempo'] for r in resultados_neuronas]
     parametros = [r['num_parametros'] for r in resultados_neuronas]
+    
+    # MLP5: Gráfica comparativa de accuracy y tiempo en una sola gráfica con dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    
+    x_pos = np.arange(len(neuronas_vals))
+    width = 0.35
+    
+    # Eje Y izquierdo para Accuracy
+    color_acc = 'tab:blue'
+    bars1 = ax1.bar(x_pos - width/2, accuracies, width, label='Test Accuracy',
+                    color='lightgreen', edgecolor='darkgreen', alpha=0.7)
+    ax1.set_xlabel('Número de Neuronas', fontsize=12)
+    ax1.set_ylabel('Test Accuracy', color=color_acc, fontsize=12)
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels([str(n) for n in neuronas_vals])
+    ax1.tick_params(axis='y', labelcolor=color_acc)
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Ajustar escala de accuracy
+    acc_min = min(accuracies)
+    acc_max = max(accuracies)
+    acc_range = acc_max - acc_min
+    if acc_range > 0:
+        ax1.set_ylim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    else:
+        ax1.set_ylim([max(0, acc_min - 0.05), min(1, acc_max + 0.05)])
+    
+    # Eje Y derecho para Tiempo
+    ax2 = ax1.twinx()
+    color_tiempo = 'tab:red'
+    bars2 = ax2.bar(x_pos + width/2, tiempos, width, label='Tiempo de Entrenamiento',
+                    color='skyblue', edgecolor='navy', alpha=0.7)
+    ax2.set_ylabel('Tiempo de Entrenamiento (segundos)', color=color_tiempo, fontsize=12)
+    ax2.tick_params(axis='y', labelcolor=color_tiempo)
+    
+    # Ajustar escala de tiempo
+    tiempo_min = min(tiempos)
+    tiempo_max = max(tiempos)
+    tiempo_range = tiempo_max - tiempo_min
+    ax2.set_ylim([max(0, tiempo_min - tiempo_range * 0.1), tiempo_max + tiempo_range * 0.1])
+    
+    # Leyenda combinada
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='best')
+    
+    plt.title('MLP5: Comparación de Números de Neuronas (Accuracy y Tiempo)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+    
+    # MLP5: Gráficas adicionales de análisis
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
     
     # Gráfica de accuracy vs neuronas
     ax1.plot(neuronas_vals, accuracies, marker='o', linestyle='-', linewidth=2, markersize=8)
@@ -1024,14 +1165,64 @@ def probar_MLP6(X_train, X_test, Y_train, Y_test, arquitecturas=None, epochs_max
     
     print("\n[MLP6] Generando gráficas comparativas...")
     
-    # MLP6: Gráfica comparativa
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 10))
-    
     nombres = [r['nombre'] for r in resultados_arquitecturas]
     accuracies = [r['test_accuracy'] for r in resultados_arquitecturas]
     tiempos = [r['tiempo'] for r in resultados_arquitecturas]
     parametros = [r['num_parametros'] for r in resultados_arquitecturas]
     num_capas_list = [r['num_capas'] for r in resultados_arquitecturas]
+    
+    # MLP6: Gráfica comparativa de accuracy y tiempo en una sola gráfica con dos ejes Y
+    fig, ax1 = plt.subplots(figsize=(12, 8))
+    
+    x_pos = np.arange(len(nombres))
+    width = 0.35
+    
+    # Eje Y izquierdo para Accuracy
+    color_acc = 'tab:blue'
+    bars1 = ax1.barh(x_pos - width/2, accuracies, width, label='Test Accuracy',
+                     color='lightgreen', edgecolor='darkgreen', alpha=0.7)
+    ax1.set_ylabel('Arquitectura', fontsize=12)
+    ax1.set_xlabel('Test Accuracy', color=color_acc, fontsize=12)
+    ax1.set_yticks(x_pos)
+    ax1.set_yticklabels(nombres, fontsize=9)
+    ax1.tick_params(axis='x', labelcolor=color_acc)
+    ax1.grid(True, alpha=0.3, axis='x')
+    ax1.invert_yaxis()  # Mejor arriba
+    
+    # Ajustar escala de accuracy
+    acc_min = min(accuracies)
+    acc_max = max(accuracies)
+    acc_range = acc_max - acc_min
+    if acc_range > 0:
+        ax1.set_xlim([max(0, acc_min - acc_range * 0.1), min(1, acc_max + acc_range * 0.1)])
+    else:
+        ax1.set_xlim([max(0, acc_min - 0.05), min(1, acc_max + 0.05)])
+    
+    # Eje X superior para Tiempo
+    ax2 = ax1.twiny()
+    color_tiempo = 'tab:red'
+    bars2 = ax2.barh(x_pos + width/2, tiempos, width, label='Tiempo de Entrenamiento',
+                     color='skyblue', edgecolor='navy', alpha=0.7)
+    ax2.set_xlabel('Tiempo de Entrenamiento (segundos)', color=color_tiempo, fontsize=12)
+    ax2.tick_params(axis='x', labelcolor=color_tiempo)
+    
+    # Ajustar escala de tiempo
+    tiempo_min = min(tiempos)
+    tiempo_max = max(tiempos)
+    tiempo_range = tiempo_max - tiempo_min
+    ax2.set_xlim([max(0, tiempo_min - tiempo_range * 0.1), tiempo_max + tiempo_range * 0.1])
+    
+    # Leyenda combinada
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='best')
+    
+    plt.title('MLP6: Comparación de Arquitecturas (Accuracy y Tiempo)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+    
+    # MLP6: Gráficas adicionales de análisis
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 10))
     
     # Gráfica de accuracy por arquitectura
     ax1.barh(nombres, accuracies, color='lightgreen', edgecolor='darkgreen', alpha=0.7)
